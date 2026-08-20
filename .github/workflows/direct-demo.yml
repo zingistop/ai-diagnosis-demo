@@ -1,0 +1,35 @@
+name: Publish direct AI diagnosis demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make the embedded demo the landing view
+        shell: bash
+        run: |
+          sed -i 's/<section class="embedded-demo-view" id="embedded-demo-view" aria-label="AI错因诊断完整页面" hidden>/<section class="embedded-demo-view" id="embedded-demo-view" aria-label="AI错因诊断完整页面">/' index.html
+          sed -i '/<button class="return-button" id="return-to-overview"/d' index.html
+          sed -i "/const returnButton = document.getElementById('return-to-overview');/d" index.html
+          sed -i "/returnButton.addEventListener('click'/,+3d" index.html
+          sed -i '/^    })();$/i\      openEmbeddedDemo();' index.html
+          ! grep -q 'return-to-overview' index.html
+          grep -q '<section class="embedded-demo-view" id="embedded-demo-view" aria-label="AI错因诊断完整页面">' index.html
+          grep -q 'openEmbeddedDemo();' index.html
+
+      - name: Commit the published page
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/direct-demo.yml
+          git add index.html
+          git commit -m "Open AI diagnosis demo directly"
+          git push
